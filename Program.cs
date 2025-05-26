@@ -3,6 +3,7 @@ using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using SCED.API;
 using SCED.API.Infrasctructure.Context;
+using SCED.API.Interfaces;
 using SCED.API.Services;
 
 DotEnv.Load();
@@ -38,6 +39,7 @@ services.AddControllers()
     });
 
 services.AddScoped<DeviceDataService>();
+builder.Services.AddScoped<IResourceService, ResourceService>();
 
 var app = builder.Build();
 

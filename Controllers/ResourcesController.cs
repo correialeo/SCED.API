@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
-using SCED.API.Infrasctructure.Context;
+using SCED.API.Interfaces;
 
 namespace SCED.API.Controllers
 {
@@ -14,95 +8,102 @@ namespace SCED.API.Controllers
     [ApiController]
     public class ResourcesController : ControllerBase
     {
-        private readonly DatabaseContext _context;
+        private readonly IResourceService _resourceService;
 
-        public ResourcesController(DatabaseContext context)
+        public ResourcesController(IResourceService resourceService)
         {
-            _context = context;
+            _resourceService = resourceService;
         }
 
         // GET: api/Resources
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Resource>>> GetResources()
         {
-            return await _context.Resources.ToListAsync();
+            IEnumerable<Resource>? resources = await _resourceService.GetAllResourcesAsync();
+            return Ok(resources);
         }
 
         // GET: api/Resources/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Resource>> GetResource(long id)
         {
-            var resource = await _context.Resources.FindAsync(id);
+            Resource? resource = await _resourceService.GetResourceByIdAsync(id);
 
             if (resource == null)
             {
                 return NotFound();
             }
 
-            return resource;
+            return Ok(resource);
+        }
+
+        // GET: api/Resources/nearby?latitude=-23.5505&longitude=-46.6333&radius=10
+        [HttpGet("nearby")]
+        public async Task<ActionResult<IEnumerable<Resource>>> GetNearbyResources(
+            [FromQuery] double latitude, 
+            [FromQuery] double longitude, 
+            [FromQuery] double radius = 5.0)
+        {
+            if (latitude < -90 || latitude > 90)
+                return BadRequest("Latitude deve estar entre -90 e 90");
+
+            if (longitude < -180 || longitude > 180)
+                return BadRequest("Longitude deve estar entre -180 e 180");
+
+            if (radius <= 0 || radius > 100)
+                return BadRequest("Raio deve estar entre 0 e 100 km");
+
+            var nearbyResources = await _resourceService.GetNearbyResourcesAsync(latitude, longitude, radius);
+            return Ok(nearbyResources);
         }
 
         // PUT: api/Resources/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutResource(long id, Resource resource)
         {
             if (id != resource.Id)
             {
-                return BadRequest();
+                return BadRequest("ID do recurso não confere");
             }
-
-            _context.Entry(resource).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _resourceService.UpdateResourceAsync(resource);
+                return NoContent();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!ResourceExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest($"Erro ao atualizar recurso: {ex.Message}");
             }
-
-            return NoContent();
         }
 
         // POST: api/Resources
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Resource>> PostResource(Resource resource)
         {
-            _context.Resources.Add(resource);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetResource", new { id = resource.Id }, resource);
+            try
+            {
+                Resource? createdResource = await _resourceService.CreateResourceAsync(resource);
+                return CreatedAtAction("GetResource", new { id = createdResource.Id }, createdResource);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Erro ao criar recurso: {ex.Message}");
+            }
         }
 
         // DELETE: api/Resources/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteResource(long id)
         {
-            var resource = await _context.Resources.FindAsync(id);
-            if (resource == null)
+            bool deleted = await _resourceService.DeleteResourceAsync(id);
+            
+            if (!deleted)
             {
                 return NotFound();
             }
 
-            _context.Resources.Remove(resource);
-            await _context.SaveChangesAsync();
-
             return NoContent();
-        }
-
-        private bool ResourceExists(long id)
-        {
-            return _context.Resources.Any(e => e.Id == id);
         }
     }
 }
