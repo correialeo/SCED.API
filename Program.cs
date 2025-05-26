@@ -40,6 +40,7 @@ services.AddControllers()
 
 services.AddScoped<DeviceDataService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
+builder.Services.AddScoped<IShelterService, ShelterService>();
 
 var app = builder.Build();
 
