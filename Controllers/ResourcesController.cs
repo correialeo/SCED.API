@@ -68,7 +68,7 @@ namespace SCED.API.Controllers
 
             try
             {
-                await _resourceService.UpdateResourceAsync(resource);
+                await _resourceService.UpdateResourceAsync(id, resource);
                 return NoContent();
             }
             catch (Exception ex)

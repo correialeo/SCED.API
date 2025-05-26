@@ -44,9 +44,18 @@ namespace SCED.API.Services
             return await _context.Resources.FindAsync(id);
         }
 
-        public async Task<Resource> UpdateResourceAsync(Resource resource)
+        public async Task<Resource> UpdateResourceAsync(long id, Resource updatedResource)
         {
-            _context.Entry(resource).State = EntityState.Modified;
+            Resource? resource = await _context.Resources.FindAsync(id);
+            if (resource == null)
+                return null;
+
+            resource.Type = updatedResource.Type;
+            resource.Quantity = updatedResource.Quantity;
+            resource.Latitude = updatedResource.Latitude;
+            resource.Longitude = updatedResource.Longitude;
+            resource.Status = updatedResource.Status;
+
             await _context.SaveChangesAsync();
             return resource;
         }

@@ -8,7 +8,7 @@ namespace SCED.API.Interfaces
         Task<Resource> CreateResourceAsync(Resource resource);
         Task<IEnumerable<Resource>> GetAllResourcesAsync();
         Task<Resource> GetResourceByIdAsync(long id);
-        Task<Resource> UpdateResourceAsync(Resource resource);
+        Task<Resource> UpdateResourceAsync(long id, Resource updatedResource);
         Task<bool> DeleteResourceAsync(long id);
     }
 }
