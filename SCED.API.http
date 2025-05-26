@@ -1,0 +1,6 @@
+@SCED.API_HostAddress = http://localhost:5046
+
+GET {{SCED.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

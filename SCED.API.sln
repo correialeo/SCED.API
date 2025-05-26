@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCED.API", "SCED.API.csproj", "{237E693C-72E6-44EC-B043-34F1531E591B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{237E693C-72E6-44EC-B043-34F1531E591B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{237E693C-72E6-44EC-B043-34F1531E591B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{237E693C-72E6-44EC-B043-34F1531E591B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{237E693C-72E6-44EC-B043-34F1531E591B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {614B0B67-52C1-4FE8-A3A4-3543FB4C78CA}
+	EndGlobalSection
+EndGlobal
