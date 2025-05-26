@@ -35,29 +35,18 @@ namespace SCED.API
             return hashed;
         }
 
-        public static string GetConnectionString(int filial = 0)
+        public static string GetConnectionString()
         {
             string databaseServer = Environment.GetEnvironmentVariable("DATABASE__SERVER");
+            string databaseName = Environment.GetEnvironmentVariable("DATABASE__NAME");
+            string databasePort = Environment.GetEnvironmentVariable("DATABASE__PORT");
             string databaseUser = Environment.GetEnvironmentVariable("DATABASE__USER");
             string databasePass = Environment.GetEnvironmentVariable("DATABASE__PASSWORD");
 
-            string databaseName, databasePort;
+            string conectString = _configuration.GetConnectionString("mysql");
+            conectString = string.Format(conectString, databaseServer, databasePort, databaseName, databaseUser, databasePass);
 
-            if (filial == 1)
-            {
-                databaseName = Environment.GetEnvironmentVariable("DATABASE__NAME_SP");
-                databasePort = Environment.GetEnvironmentVariable("DATABASE__PORT_SP");
-            }
-            else
-            {
-                databaseName = Environment.GetEnvironmentVariable("DATABASE__NAME");
-                databasePort = Environment.GetEnvironmentVariable("DATABASE__PORT");
-            }
-
-            string connectionString = _configuration.GetConnectionString("mysql");
-            connectionString = string.Format(connectionString, databaseServer, databasePort, databaseName, databaseUser, databasePass);
-
-            return connectionString;
+            return conectString;
         }
     }
 }
