@@ -18,18 +18,16 @@ namespace SCED.API.Services
 
         public async Task<ServiceResponse<DeviceData>> ReceiveDataAsync(DeviceDataDTO deviceDataDTO)
         {
-            // Validação mais robusta
             if (deviceDataDTO?.DeviceId <= 0)
             {
                 return ServiceResponse<DeviceData>.CreateError("Invalid device ID");
             }
 
-            var deviceData = new DeviceData(deviceDataDTO.DeviceId, deviceDataDTO.Value);
+            DeviceData? deviceData = new DeviceData(deviceDataDTO.DeviceId, deviceDataDTO.Value);
 
             try
             {
-                // Usar Include para carregar relacionamentos quando necessário
-                var device = await _context.Devices
+                Device? device = await _context.Devices
                     .FirstOrDefaultAsync(d => d.Id == deviceData.DeviceId);
                 
                 if (device == null)
@@ -37,7 +35,6 @@ namespace SCED.API.Services
                     return ServiceResponse<DeviceData>.CreateError("Device not found");
                 }
 
-                // Usar transaction para operações que envolvem múltiplas tabelas
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 
                 try
@@ -45,7 +42,7 @@ namespace SCED.API.Services
                     _context.DeviceData.Add(deviceData);
                     await _context.SaveChangesAsync();
 
-                    var alert = await ProcessAlertLogicAsync(device, deviceData);
+                    Alert? alert = await ProcessAlertLogicAsync(device, deviceData);
                     
                     if (alert != null)
                     {
@@ -55,10 +52,9 @@ namespace SCED.API.Services
 
                     await transaction.CommitAsync();
 
-                    // Definir referência após salvar
                     deviceData.Device = device;
 
-                    var message = alert != null 
+                    string message = alert != null 
                         ? "Device data received and alert generated" 
                         : "Device data received successfully";
 
