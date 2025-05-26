@@ -1,7 +1,9 @@
+using System.Text.Json.Serialization;
 using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using SCED.API;
 using SCED.API.Infrasctructure.Context;
+using SCED.API.Services;
 
 DotEnv.Load();
 
@@ -28,6 +30,14 @@ services.AddDbContext<DatabaseContext>(options =>
         options.EnableRetryOnFailure();
     });
 });
+
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+services.AddScoped<DeviceDataService>();
 
 var app = builder.Build();
 

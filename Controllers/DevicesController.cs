@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCED.API.Domain.Entity;
+using SCED.API.DTO;
 using SCED.API.Infrasctructure.Context;
 
 namespace SCED.API.Controllers
@@ -76,8 +77,21 @@ namespace SCED.API.Controllers
         // POST: api/Devices
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Device>> PostDevice(Device device)
+        public async Task<ActionResult<Device>> PostDevice(DeviceDTO deviceDTO)
         {
+            if (deviceDTO == null)
+            {
+                return BadRequest("Device data cannot be null");
+            }
+
+            var device = new Device
+            {
+                Type = deviceDTO.Type,
+                Status = deviceDTO.Status,
+                Latitude = deviceDTO.Latitude,
+                Longitude = deviceDTO.Longitude
+            };
+
             _context.Devices.Add(device);
             await _context.SaveChangesAsync();
 
