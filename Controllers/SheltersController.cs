@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
+using SCED.API.DTO;
 using SCED.API.Interfaces;
 
 namespace SCED.API.Controllers
@@ -92,7 +93,7 @@ namespace SCED.API.Controllers
 
         // PATCH: api/Shelters/5/capacity - Endpoint específico para atualizar ocupação
         [HttpPatch("{id}/capacity")]
-        public async Task<IActionResult> UpdateShelterCapacity(long id, [FromBody] UpdateCapacityRequest request)
+        public async Task<IActionResult> UpdateShelterCapacity(long id, [FromBody] UpdateCapacityRequestDTO request)
         {
             try
             {
@@ -143,11 +144,5 @@ namespace SCED.API.Controllers
 
             return NoContent();
         }
-    }
-
-    // DTO para atualização de capacidade
-    public class UpdateCapacityRequest
-    {
-        public int CurrentOccupancy { get; set; }
     }
 }
