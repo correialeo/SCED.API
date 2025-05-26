@@ -2,8 +2,8 @@
 {
     public enum UserRole
     {
-        VOLUNTEER,
-        VICTIM,
-        AUTHORITY
+        Volunteer,
+        Victim,
+        Authority
     }
 }

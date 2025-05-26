@@ -2,12 +2,12 @@
 {
     public enum ResourceType
     {
-        FOOD,
-        MEDICAL_SUPPLIES,
-        RESCUE_TEAM,
-        WATER,
-        SHELTER,
-        CLOTHING,
-        POWER_SUPPLY
+        Food,
+        MedicalSupplies,
+        RescueTeam,
+        Water,
+        Shelter,
+        Clothing,
+        PowerSupply
     }
 }

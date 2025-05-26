@@ -12,8 +12,8 @@ using SCED.API.Infrasctructure.Context;
 namespace SCED.API.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20250526154352_v1")]
-    partial class v1
+    [Migration("20250526170540_v1.1")]
+    partial class v11
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

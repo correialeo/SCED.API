@@ -2,10 +2,10 @@
 {
     public enum ResourceStatus
     {
-        AVAILABLE,
-        IN_USE,
-        EXHAUSTED,
-        DAMAGED,
-        PENDING
+        Available,
+        InUse,
+        Exhausted,
+        Damaged,
+        Pending
     }
 }

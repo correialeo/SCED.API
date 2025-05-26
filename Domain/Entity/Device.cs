@@ -1,4 +1,5 @@
-﻿using SCED.API.Domain.Enums;
+﻿using System.Text.Json.Serialization;
+using SCED.API.Domain.Enums;
 
 namespace SCED.API.Domain.Entity
 {
@@ -9,6 +10,7 @@ namespace SCED.API.Domain.Entity
         public DeviceStatus Status { get; set; } 
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        [JsonIgnore]
         public ICollection<DeviceData> DeviceData { get; set; } = new List<DeviceData>();
 
         public Device() { }
