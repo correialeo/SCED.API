@@ -6,7 +6,7 @@
         public string Name { get; set; }
         public string Address { get; set; }
         public int Capacity { get; set; }
-        public int CurrentOccupancy { get; set; }
+        public int CurrentOccupancy { get; set; } = 0;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
 
