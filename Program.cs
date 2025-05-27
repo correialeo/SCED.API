@@ -41,6 +41,8 @@ services.AddControllers()
 services.AddScoped<DeviceDataService>();
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<IShelterService, ShelterService>();
+builder.Services.AddScoped<IDeviceService, DeviceService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
 
 var app = builder.Build();
 

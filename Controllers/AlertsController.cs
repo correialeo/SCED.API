@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
-using SCED.API.Infrasctructure.Context;
+using SCED.API.Interfaces;
 
 namespace SCED.API.Controllers
 {
@@ -14,95 +8,63 @@ namespace SCED.API.Controllers
     [ApiController]
     public class AlertsController : ControllerBase
     {
-        private readonly DatabaseContext _context;
+        private readonly IAlertService _alertService;
 
-        public AlertsController(DatabaseContext context)
+        public AlertsController(IAlertService alertService)
         {
-            _context = context;
+            _alertService = alertService;
         }
 
-        // GET: api/Alerts
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Alert>>> GetAlerts()
         {
-            return await _context.Alerts.ToListAsync();
+            var alerts = await _alertService.GetAllAlertsAsync();
+            return Ok(alerts);
         }
 
-        // GET: api/Alerts/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Alert>> GetAlert(long id)
         {
-            var alert = await _context.Alerts.FindAsync(id);
-
-            if (alert == null)
-            {
-                return NotFound();
-            }
-
-            return alert;
+            var alert = await _alertService.GetAlertByIdAsync(id);
+            return alert != null ? Ok(alert) : NotFound();
         }
 
-        // PUT: api/Alerts/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAlert(long id, Alert alert)
         {
             if (id != alert.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(alert).State = EntityState.Modified;
+                return BadRequest("ID do alerta não confere");
 
             try
             {
-                await _context.SaveChangesAsync();
+                var updatedAlert = await _alertService.UpdateAlertAsync(id, alert);
+                return updatedAlert != null ? NoContent() : NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!AlertExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest($"Erro ao atualizar alerta: {ex.Message}");
             }
-
-            return NoContent();
         }
 
-        // POST: api/Alerts
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Alert>> PostAlert(Alert alert)
         {
-            _context.Alerts.Add(alert);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetAlert", new { id = alert.Id }, alert);
+            try
+            {
+                var createdAlert = await _alertService.CreateAlertAsync(alert);
+                return CreatedAtAction("GetAlert", new { id = createdAlert.Id }, createdAlert);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Erro ao criar alerta: {ex.Message}");
+            }
         }
 
-        // DELETE: api/Alerts/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAlert(long id)
         {
-            var alert = await _context.Alerts.FindAsync(id);
-            if (alert == null)
-            {
-                return NotFound();
-            }
-
-            _context.Alerts.Remove(alert);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool AlertExists(long id)
-        {
-            return _context.Alerts.Any(e => e.Id == id);
+            var deleted = await _alertService.DeleteAlertAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }
