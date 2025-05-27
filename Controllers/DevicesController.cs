@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
 using SCED.API.DTO;
-using SCED.API.Infrasctructure.Context;
+using SCED.API.Interfaces;
 
 namespace SCED.API.Controllers
 {
@@ -15,74 +9,49 @@ namespace SCED.API.Controllers
     [ApiController]
     public class DevicesController : ControllerBase
     {
-        private readonly DatabaseContext _context;
+        private readonly IDeviceService _deviceService;
 
-        public DevicesController(DatabaseContext context)
+        public DevicesController(IDeviceService deviceService)
         {
-            _context = context;
+            _deviceService = deviceService;
         }
 
-        // GET: api/Devices
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Device>>> GetDevices()
         {
-            return await _context.Devices.ToListAsync();
+            var devices = await _deviceService.GetAllDevicesAsync();
+            return Ok(devices);
         }
 
-        // GET: api/Devices/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Device>> GetDevice(long id)
         {
-            var device = await _context.Devices.FindAsync(id);
-
-            if (device == null)
-            {
-                return NotFound();
-            }
-
-            return device;
+            var device = await _deviceService.GetDeviceByIdAsync(id);
+            return device != null ? Ok(device) : NotFound();
         }
 
-        // PUT: api/Devices/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutDevice(long id, Device device)
         {
             if (id != device.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(device).State = EntityState.Modified;
+                return BadRequest("ID do dispositivo não confere");
 
             try
             {
-                await _context.SaveChangesAsync();
+                var updatedDevice = await _deviceService.UpdateDeviceAsync(id, device);
+                return updatedDevice != null ? NoContent() : NotFound();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!DeviceExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest($"Erro ao atualizar dispositivo: {ex.Message}");
             }
-
-            return NoContent();
         }
 
-        // POST: api/Devices
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Device>> PostDevice(DeviceDTO deviceDTO)
         {
             if (deviceDTO == null)
-            {
-                return BadRequest("Device data cannot be null");
-            }
+                return BadRequest("Dados do dispositivo inválidos");
 
             var device = new Device
             {
@@ -92,31 +61,22 @@ namespace SCED.API.Controllers
                 Longitude = deviceDTO.Longitude
             };
 
-            _context.Devices.Add(device);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetDevice", new { id = device.Id }, device);
+            try
+            {
+                var createdDevice = await _deviceService.CreateDeviceAsync(device);
+                return CreatedAtAction("GetDevice", new { id = createdDevice.Id }, createdDevice);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Erro ao criar dispositivo: {ex.Message}");
+            }
         }
 
-        // DELETE: api/Devices/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDevice(long id)
         {
-            var device = await _context.Devices.FindAsync(id);
-            if (device == null)
-            {
-                return NotFound();
-            }
-
-            _context.Devices.Remove(device);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool DeviceExists(long id)
-        {
-            return _context.Devices.Any(e => e.Id == id);
+            var deleted = await _deviceService.DeleteDeviceAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }
