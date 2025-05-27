@@ -10,7 +10,7 @@ using SCED.API.DTO;
 namespace SCED.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/data")]
     public class DeviceDataController : ControllerBase
     {
         private readonly DeviceDataService _deviceDataService;

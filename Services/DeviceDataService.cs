@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SCED.API.Common;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Enums;
@@ -27,48 +28,63 @@ namespace SCED.API.Services
 
             try
             {
-                Device? device = await _context.Devices
-                    .FirstOrDefaultAsync(d => d.Id == deviceData.DeviceId);
-                
-                if (device == null)
-                {
-                    return ServiceResponse<DeviceData>.CreateError("Device not found");
-                }
+                IExecutionStrategy executionStrategy = _context.Database.CreateExecutionStrategy();
 
-                using var transaction = await _context.Database.BeginTransactionAsync();
-                
-                try
-                {
-                    _context.DeviceData.Add(deviceData);
-                    await _context.SaveChangesAsync();
+                Device? device = null;
+                Alert? alert = null;
 
-                    Alert? alert = await ProcessAlertLogicAsync(device, deviceData);
-                    
-                    if (alert != null)
+                await executionStrategy.ExecuteAsync(async () =>
+                {
+                    using var transaction = await _context.Database.BeginTransactionAsync();
+
+                    try
                     {
-                        _context.Alerts.Add(alert);
+                        device = await _context.Devices
+                            .FirstOrDefaultAsync(d => d.Id == deviceData.DeviceId);
+
+                        if (device == null)
+                        {
+                            throw new Exception("Device not found");
+                        }
+
+                        _context.DeviceData.Add(deviceData);
                         await _context.SaveChangesAsync();
+
+                        alert = await ProcessAlertLogicAsync(device, deviceData);
+
+                        if (alert != null)
+                        {
+                            _context.Alerts.Add(alert);
+                            await _context.SaveChangesAsync();
+                        }
+
+                        await transaction.CommitAsync();
                     }
+                    catch (Exception)
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                });
 
-                    await transaction.CommitAsync();
+                deviceData.Device = device;
 
-                    deviceData.Device = device;
+                string message = alert != null 
+                    ? "Device data received and alert generated" 
+                    : "Device data received successfully";
 
-                    string message = alert != null 
-                        ? "Device data received and alert generated" 
-                        : "Device data received successfully";
-
-                    return ServiceResponse<DeviceData>.CreateSuccess(deviceData, message);
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                return ServiceResponse<DeviceData>.CreateSuccess(deviceData, message);
             }
             catch (Exception ex)
             {
-                return ServiceResponse<DeviceData>.CreateError($"Error receiving device data: {ex.Message}");
+                if (ex.Message == "Device not found")
+                {
+                    return ServiceResponse<DeviceData>.CreateError("Device not found");
+                }
+                else
+                {
+                    return ServiceResponse<DeviceData>.CreateError($"Error receiving device data: {ex.Message}");
+                }
             }
         }
 
