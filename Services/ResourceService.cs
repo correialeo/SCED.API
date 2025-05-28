@@ -1,97 +1,193 @@
-using Microsoft.EntityFrameworkCore;
 using SCED.API.Domain.Entity;
-using SCED.API.Infrasctructure.Context;
+using SCED.API.Domain.Enums;
+using SCED.API.Domain.Interfaces;
 using SCED.API.Interfaces;
 
 namespace SCED.API.Services
 {
     public class ResourceService : IResourceService
     {
-        private readonly DatabaseContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ResourceService(DatabaseContext context)
+        public ResourceService(IUnitOfWork unitOfWork)
         {
-            _context = context;
-        }
-
-        public async Task<IEnumerable<Resource>> GetNearbyResourcesAsync(double latitude, double longitude, double radiusKm = 5.0)
-        {
-            IEnumerable<Resource> resources = await _context.Resources.ToListAsync();
-
-            IOrderedEnumerable<Resource>? nearbyResources = resources.Where(resource =>
-                CalculateDistance(latitude, longitude, resource.Latitude, resource.Longitude) <= radiusKm
-            ).OrderBy(resource =>
-                CalculateDistance(latitude, longitude, resource.Latitude, resource.Longitude)
-            );
-
-            return nearbyResources;
-        }
-
-        public async Task<Resource> CreateResourceAsync(Resource resource)
-        {
-            _context.Resources.Add(resource);
-            await _context.SaveChangesAsync();
-            return resource;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<IEnumerable<Resource>> GetAllResourcesAsync()
         {
-            return await _context.Resources.ToListAsync();
+            try
+            {
+                return await _unitOfWork.Resources.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar todos os recursos.", ex);
+            }
         }
 
-        public async Task<Resource> GetResourceByIdAsync(long id)
+        public async Task<Resource?> GetResourceByIdAsync(long id)
         {
-            return await _context.Resources.FindAsync(id);
+            if (id <= 0)
+                throw new ArgumentException("O ID do recurso deve ser maior que zero.", nameof(id));
+
+            try
+            {
+                return await _unitOfWork.Resources.GetByIdAsync(id);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar recurso com ID {id}.", ex);
+            }
         }
 
-        public async Task<Resource> UpdateResourceAsync(long id, Resource updatedResource)
+        public async Task<IEnumerable<Resource>> GetResourcesByTypeAsync(ResourceType type)
         {
-            Resource? resource = await _context.Resources.FindAsync(id);
+            if (!Enum.IsDefined(typeof(ResourceType), type))
+                throw new ArgumentException("Tipo de recurso inválido.", nameof(type));
+
+            try
+            {
+                return await _unitOfWork.Resources.GetResourcesByTypeAsync(type);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar recursos do tipo {type}.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<Resource>> GetAvailableResourcesAsync()
+        {
+            try
+            {
+                return await _unitOfWork.Resources.GetAvailableResourcesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar recursos disponíveis.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<Resource>> GetResourcesByStatusAsync(ResourceStatus status)
+        {
+            if (!Enum.IsDefined(typeof(ResourceStatus), status))
+                throw new ArgumentException("Status do recurso inválido.", nameof(status));
+
+            try
+            {
+                return await _unitOfWork.Resources.GetResourcesByStatusAsync(status);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar recursos com status {status}.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<Resource>> GetNearbyResourcesAsync(double latitude, double longitude, double radiusKm = 5.0)
+        {
+            if (latitude < -90 || latitude > 90)
+                throw new ArgumentException("A latitude deve estar entre -90 e 90 graus.", nameof(latitude));
+            if (longitude < -180 || longitude > 180)
+                throw new ArgumentException("A longitude deve estar entre -180 e 180 graus.", nameof(longitude));
+            if (radiusKm <= 0 || radiusKm > 1000)
+                throw new ArgumentException("O raio deve estar entre 0 e 1000 km.", nameof(radiusKm));
+
+            try
+            {
+                return await _unitOfWork.Resources.GetResourcesInRadiusAsync(latitude, longitude, radiusKm);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar recursos na área especificada.", ex);
+            }
+        }
+
+        public async Task<Resource> CreateResourceAsync(Resource resource)
+        {
             if (resource == null)
-                return null;
+                throw new ArgumentNullException(nameof(resource), "O recurso não pode ser nulo.");
 
-            resource.Type = updatedResource.Type;
-            resource.Quantity = updatedResource.Quantity;
-            resource.Latitude = updatedResource.Latitude;
-            resource.Longitude = updatedResource.Longitude;
-            resource.Status = updatedResource.Status;
+            ValidateResource(resource);
 
-            await _context.SaveChangesAsync();
-            return resource;
+            try
+            {
+
+                await _unitOfWork.Resources.AddAsync(resource);
+                await _unitOfWork.SaveChangesAsync();
+                return resource;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao criar o recurso.", ex);
+            }
+        }
+
+        public async Task<Resource?> UpdateResourceAsync(long id, Resource updatedResource)
+        {
+            if (id <= 0)
+                throw new ArgumentException("O ID do recurso deve ser maior que zero.", nameof(id));
+            if (updatedResource == null)
+                throw new ArgumentNullException(nameof(updatedResource), "O recurso atualizado não pode ser nulo.");
+            if (id != updatedResource.Id)
+                throw new ArgumentException("O ID fornecido não corresponde ao ID do recurso.", nameof(id));
+
+            ValidateResource(updatedResource);
+
+            try
+            {
+                Resource existingResource = await _unitOfWork.Resources.GetByIdAsync(id);
+                if (existingResource == null)
+                    return null;
+
+                existingResource.Type = updatedResource.Type;
+                existingResource.Quantity = updatedResource.Quantity;
+                existingResource.Latitude = updatedResource.Latitude;
+                existingResource.Longitude = updatedResource.Longitude;
+                existingResource.Status = updatedResource.Status;
+
+                await _unitOfWork.Resources.UpdateAsync(existingResource);
+                await _unitOfWork.SaveChangesAsync();
+                return existingResource;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao atualizar o recurso com ID {id}.", ex);
+            }
         }
 
         public async Task<bool> DeleteResourceAsync(long id)
         {
-            var resource = await _context.Resources.FindAsync(id);
-            if (resource == null)
-                return false;
+            if (id <= 0)
+                throw new ArgumentException("O ID do recurso deve ser maior que zero.", nameof(id));
 
-            _context.Resources.Remove(resource);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                Resource resource = await _unitOfWork.Resources.GetByIdAsync(id);
+                if (resource == null)
+                    return false;
+
+                await _unitOfWork.Resources.DeleteAsync(resource);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao deletar o recurso com ID {id}.", ex);
+            }
         }
 
-        // formula de haversine
-        private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        private static void ValidateResource(Resource resource)
         {
-            const double R = 6371; // raio da terra em km
-
-            double dLat = ToRadians(lat2 - lat1);
-            double dLon = ToRadians(lon2 - lon1);
-
-            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                    Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            var distance = R * c;
-
-            return distance;
-        }
-
-        private double ToRadians(double degrees)
-        {
-            return degrees * (Math.PI / 180);
+            if (!Enum.IsDefined(typeof(ResourceType), resource.Type))
+                throw new ArgumentException("Tipo de recurso inválido.", nameof(resource.Type));
+            if (resource.Quantity < 0)
+                throw new ArgumentException("A quantidade deve ser maior ou igual a zero.", nameof(resource.Quantity));
+            if (resource.Latitude < -90 || resource.Latitude > 90)
+                throw new ArgumentException("A latitude deve estar entre -90 e 90 graus.", nameof(resource.Latitude));
+            if (resource.Longitude < -180 || resource.Longitude > 180)
+                throw new ArgumentException("A longitude deve estar entre -180 e 180 graus.", nameof(resource.Longitude));
+            if (!Enum.IsDefined(typeof(ResourceStatus), resource.Status))
+                throw new ArgumentException("Status do recurso inválido.", nameof(resource.Status));
         }
     }
 }

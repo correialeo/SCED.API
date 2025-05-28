@@ -1,103 +1,147 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using SCED.API.Common;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Enums;
+using SCED.API.Domain.Interfaces;
 using SCED.API.DTO;
-using SCED.API.Infrasctructure.Context;
 
 namespace SCED.API.Services
 {
     public class DeviceDataService
     {
-        private readonly DatabaseContext _context;
-        
-        public DeviceDataService(DatabaseContext context)
+        private readonly IUnitOfWork _unitOfWork;
+
+        public DeviceDataService(IUnitOfWork unitOfWork)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<ServiceResponse<DeviceData>> ReceiveDataAsync(DeviceDataDTO deviceDataDTO)
+        public async Task<DeviceData> ReceiveDataAsync(DeviceDataDTO deviceDataDTO)
         {
-            if (deviceDataDTO?.DeviceId <= 0)
-            {
-                return ServiceResponse<DeviceData>.CreateError("Invalid device ID");
-            }
+            if (deviceDataDTO == null)
+                throw new ArgumentNullException(nameof(deviceDataDTO), "Dados do dispositivo não podem ser nulos.");
+            
+            if (deviceDataDTO.DeviceId <= 0)
+                throw new ArgumentException("O ID do dispositivo deve ser maior que zero.", nameof(deviceDataDTO.DeviceId));
 
-            DeviceData? deviceData = new DeviceData(deviceDataDTO.DeviceId, deviceDataDTO.Value);
+            var deviceData = new DeviceData(deviceDataDTO.DeviceId, deviceDataDTO.Value);
+
+            var strategy = _unitOfWork.Context.Database.CreateExecutionStrategy();
+            
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _unitOfWork.Context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    var device = await _unitOfWork.Devices.GetByIdAsync(deviceData.DeviceId);
+                    if (device == null)
+                    {
+                        throw new ArgumentException("Dispositivo não encontrado.", nameof(deviceData.DeviceId));
+                    }
+
+                    await _unitOfWork.DeviceData.AddAsync(deviceData);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    var alert = await ProcessAlertLogicAsync(device, deviceData);
+                    if (alert != null)
+                    {
+                        await _unitOfWork.Alerts.AddAsync(alert);
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+                    return deviceData;
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+        }
+
+        public async Task<IEnumerable<DeviceData>> GetDataByDeviceIdAsync(long deviceId)
+        {
+            if (deviceId <= 0)
+                throw new ArgumentException("O ID do dispositivo deve ser maior que zero.", nameof(deviceId));
 
             try
             {
-                IExecutionStrategy executionStrategy = _context.Database.CreateExecutionStrategy();
-
-                Device? device = null;
-                Alert? alert = null;
-
-                await executionStrategy.ExecuteAsync(async () =>
-                {
-                    using var transaction = await _context.Database.BeginTransactionAsync();
-
-                    try
-                    {
-                        device = await _context.Devices
-                            .FirstOrDefaultAsync(d => d.Id == deviceData.DeviceId);
-
-                        if (device == null)
-                        {
-                            throw new Exception("Device not found");
-                        }
-
-                        _context.DeviceData.Add(deviceData);
-                        await _context.SaveChangesAsync();
-
-                        alert = await ProcessAlertLogicAsync(device, deviceData);
-
-                        if (alert != null)
-                        {
-                            _context.Alerts.Add(alert);
-                            await _context.SaveChangesAsync();
-                        }
-
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception)
-                    {
-                        await transaction.RollbackAsync();
-                        throw;
-                    }
-                });
-
-                deviceData.Device = device;
-
-                string message = alert != null 
-                    ? "Device data received and alert generated" 
-                    : "Device data received successfully";
-
-                return ServiceResponse<DeviceData>.CreateSuccess(deviceData, message);
+                return await _unitOfWork.DeviceData.GetDataByDeviceIdAsync(deviceId);
             }
             catch (Exception ex)
             {
-                if (ex.Message == "Device not found")
-                {
-                    return ServiceResponse<DeviceData>.CreateError("Device not found");
-                }
-                else
-                {
-                    return ServiceResponse<DeviceData>.CreateError($"Error receiving device data: {ex.Message}");
-                }
+                throw new InvalidOperationException($"Erro ao buscar dados do dispositivo {deviceId}.", ex);
+            }
+        }
+        public async Task<IEnumerable<DeviceData>> GetDataByDeviceIdAndPeriodAsync(long deviceId, DateTime from, DateTime to)
+        {
+            if (deviceId <= 0)
+                throw new ArgumentException("O ID do dispositivo deve ser maior que zero.", nameof(deviceId));
+
+            if (from > to)
+                throw new ArgumentException("A data inicial não pode ser posterior à data final.", nameof(from));
+
+            if (to > DateTime.UtcNow)
+                throw new ArgumentException("A data final não pode estar no futuro.", nameof(to));
+
+            try
+            {
+                return await _unitOfWork.DeviceData.GetDataByDeviceIdAndPeriodAsync(deviceId, from, to);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar dados do dispositivo {deviceId} no período especificado.", ex);
+            }
+        }
+
+        public async Task<DeviceData?> GetLatestDataByDeviceIdAsync(long deviceId)
+        {
+            if (deviceId <= 0)
+                throw new ArgumentException("O ID do dispositivo deve ser maior que zero.", nameof(deviceId));
+
+            try
+            {
+                return await _unitOfWork.DeviceData.GetLatestDataByDeviceIdAsync(deviceId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar dado mais recente do dispositivo {deviceId}.", ex);
+            }
+        }
+
+        public async Task<IEnumerable<DeviceData>> GetDataAboveValueAsync(long deviceId, double value)
+        {
+            if (deviceId <= 0)
+                throw new ArgumentException("O ID do dispositivo deve ser maior que zero.", nameof(deviceId));
+
+            try
+            {
+                return await _unitOfWork.DeviceData.GetDataAboveValueAsync(deviceId, value);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar dados acima de {value} para o dispositivo {deviceId}.", ex);
             }
         }
 
         private async Task<Alert?> ProcessAlertLogicAsync(Device device, DeviceData deviceData)
         {
-            return device.Type switch
+            try
             {
-                DeviceType.TemperatureSensor => ProcessTemperatureAlert(device, deviceData),
-                DeviceType.WaterLevelSensor => ProcessWaterLevelAlert(device, deviceData),
-                DeviceType.VibrationSensor => ProcessVibrationAlert(device, deviceData),
-                DeviceType.SmokeSensor => ProcessSmokeAlert(device, deviceData),
-                _ => null
-            };
+                return device.Type switch
+                {
+                    DeviceType.TemperatureSensor => ProcessTemperatureAlert(device, deviceData),
+                    DeviceType.WaterLevelSensor => ProcessWaterLevelAlert(device, deviceData),
+                    DeviceType.VibrationSensor => ProcessVibrationAlert(device, deviceData),
+                    DeviceType.SmokeSensor => ProcessSmokeAlert(device, deviceData),
+                    _ => null
+                };
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         private Alert? ProcessTemperatureAlert(Device device, DeviceData deviceData)
@@ -106,18 +150,16 @@ namespace SCED.API.Services
             {
                 return CreateAlert(
                     AlertType.ExtremeHeat, 3, device, deviceData,
-                    $"Extreme temperature detected: {deviceData.Value}°C"
+                    $"Temperatura extrema detectada: {deviceData.Value}°C"
                 );
             }
-            
             if (deviceData.Value < 15)
             {
                 return CreateAlert(
                     AlertType.ExtremeCold, 3, device, deviceData,
-                    $"Extreme cold detected: {deviceData.Value}°C"
+                    $"Frio extremo detectado: {deviceData.Value}°C"
                 );
             }
-            
             return null;
         }
 
@@ -126,7 +168,7 @@ namespace SCED.API.Services
             return deviceData.Value > 100 
                 ? CreateAlert(
                     AlertType.Flood, 5, device, deviceData,
-                    $"High water level detected: {deviceData.Value}cm"
+                    $"Nível de água alto detectado: {deviceData.Value}cm"
                 )
                 : null;
         }
@@ -136,7 +178,7 @@ namespace SCED.API.Services
             return deviceData.Value > 5 
                 ? CreateAlert(
                     AlertType.Earthquake, 4, device, deviceData,
-                    $"High vibration detected: {deviceData.Value}g"
+                    $"Vibração alta detectada: {deviceData.Value}g"
                 )
                 : null;
         }
@@ -146,22 +188,22 @@ namespace SCED.API.Services
             return deviceData.Value > 200 
                 ? CreateAlert(
                     AlertType.Fire, 4, device, deviceData,
-                    $"High smoke level detected: {deviceData.Value}ppm"
+                    $"Nível de fumaça alto detectado: {deviceData.Value}ppm"
                 )
                 : null;
         }
 
-        private Alert CreateAlert(AlertType type, int severity, Device device, 
-            DeviceData deviceData, string description)
+        private Alert CreateAlert(AlertType type, int severity, Device device, DeviceData deviceData, string description)
         {
-            return new Alert(
-                type: type,
-                severity: severity,
-                latitude: device.Latitude,
-                longitude: device.Longitude,
-                timestamp: deviceData.Timestamp,
-                description: description
-            );
+            return new Alert
+            {
+                Type = type,
+                Severity = severity,
+                Latitude = device.Latitude,
+                Longitude = device.Longitude,
+                Timestamp = deviceData.Timestamp,
+                Description = description
+            };
         }
     }
 }

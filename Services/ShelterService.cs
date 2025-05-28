@@ -1,140 +1,206 @@
-using Microsoft.EntityFrameworkCore;
 using SCED.API.Domain.Entity;
-using SCED.API.Infrasctructure.Context;
+using SCED.API.Domain.Interfaces;
 using SCED.API.Interfaces;
 
 namespace SCED.API.Services
 {
-
     public class ShelterService : IShelterService
     {
-        private readonly DatabaseContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ShelterService(DatabaseContext context)
+        public ShelterService(IUnitOfWork unitOfWork)
         {
-            _context = context;
-        }
-
-        public async Task<IEnumerable<Shelter>> GetNearbySheltersAsync(double latitude, double longitude, double radiusKm = 10.0)
-        {
-            var shelters = await _context.Shelters.ToListAsync();
-            
-            var nearbyShelters = shelters.Where(shelter => 
-                CalculateDistance(latitude, longitude, shelter.Latitude, shelter.Longitude) <= radiusKm
-            ).OrderBy(shelter => 
-                CalculateDistance(latitude, longitude, shelter.Latitude, shelter.Longitude)
-            );
-
-            return nearbyShelters;
-        }
-
-        public async Task<IEnumerable<Shelter>> GetAvailableSheltersAsync()
-        {
-            return await _context.Shelters
-                .Where(s => s.CurrentOccupancy < s.Capacity)
-                .OrderBy(s => s.CurrentOccupancy)
-                .ToListAsync();
-        }
-
-        public async Task<Shelter> CreateShelterAsync(Shelter shelter)
-        {
-            if (shelter.Capacity <= 0)
-                throw new ArgumentException("Capacidade deve ser maior que zero");
-
-            if (shelter.CurrentOccupancy < 0)
-                shelter.CurrentOccupancy = 0;
-
-            if (shelter.CurrentOccupancy > shelter.Capacity)
-                throw new ArgumentException("Ocupação atual não pode ser maior que a capacidade");
-            
-            _context.Shelters.Add(shelter);
-            await _context.SaveChangesAsync();
-            return shelter;
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<IEnumerable<Shelter>> GetAllSheltersAsync()
         {
-            return await _context.Shelters.OrderBy(s => s.Name).ToListAsync();
+            try
+            {
+                return await _unitOfWork.Shelters.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar todos os abrigos.", ex);
+            }
         }
 
-        public async Task<Shelter> GetShelterByIdAsync(long id)
+        public async Task<Shelter?> GetShelterByIdAsync(long id)
         {
-            return await _context.Shelters.FindAsync(id);
+            if (id <= 0)
+                throw new ArgumentException("O ID do abrigo deve ser maior que zero.", nameof(id));
+
+            try
+            {
+                return await _unitOfWork.Shelters.GetByIdAsync(id);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao buscar abrigo com ID {id}.", ex);
+            }
         }
 
-        public async Task<Shelter> UpdateShelterAsync(long id, Shelter updatedShelter)
+        public async Task<IEnumerable<Shelter>> GetAvailableSheltersAsync()
         {
-            var existingShelter = await _context.Shelters.FindAsync(id);
-            if (existingShelter == null)
-                return null;
+            try
+            {
+                return await _unitOfWork.Shelters.GetAvailableSheltersAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar abrigos disponíveis.", ex);
+            }
+        }
 
-            if (updatedShelter.Capacity <= 0)
-                throw new ArgumentException("Capacidade deve ser maior que zero");
+        public async Task<IEnumerable<Shelter>> GetNearbySheltersAsync(double latitude, double longitude, double radiusKm = 10.0)
+        {
+            if (latitude < -90 || latitude > 90)
+                throw new ArgumentException("A latitude deve estar entre -90 e 90 graus.", nameof(latitude));
+            if (longitude < -180 || longitude > 180)
+                throw new ArgumentException("A longitude deve estar entre -180 e 180 graus.", nameof(longitude));
+            if (radiusKm <= 0 || radiusKm > 1000)
+                throw new ArgumentException("O raio deve estar entre 0 e 1000 km.", nameof(radiusKm));
 
-            if (updatedShelter.CurrentOccupancy < 0)
-                updatedShelter.CurrentOccupancy = 0;
+            try
+            {
+                return await _unitOfWork.Shelters.GetSheltersInRadiusAsync(latitude, longitude, radiusKm);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar abrigos na área especificada.", ex);
+            }
+        }
 
-            if (updatedShelter.CurrentOccupancy > updatedShelter.Capacity)
-                throw new ArgumentException("Ocupação atual não pode ser maior que a capacidade");
+        public async Task<IEnumerable<Shelter>> GetSheltersByCapacityRangeAsync(int minCapacity, int maxCapacity)
+        {
+            if (minCapacity < 0)
+                throw new ArgumentException("A capacidade mínima não pode ser negativa.", nameof(minCapacity));
+            if (maxCapacity <= minCapacity)
+                throw new ArgumentException("A capacidade máxima deve ser maior que a mínima.", nameof(maxCapacity));
 
-            existingShelter.Name = updatedShelter.Name;
-            existingShelter.Address = updatedShelter.Address;
-            existingShelter.Capacity = updatedShelter.Capacity;
-            existingShelter.CurrentOccupancy = updatedShelter.CurrentOccupancy;
-            existingShelter.Latitude = updatedShelter.Latitude;
-            existingShelter.Longitude = updatedShelter.Longitude;
+            try
+            {
+                return await _unitOfWork.Shelters.GetSheltersByCapacityRangeAsync(minCapacity, maxCapacity);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar abrigos por faixa de capacidade.", ex);
+            }
+        }
 
-            await _context.SaveChangesAsync();
-            return existingShelter;
+        public async Task<Shelter> CreateShelterAsync(Shelter shelter)
+        {
+            if (shelter == null)
+                throw new ArgumentNullException(nameof(shelter), "O abrigo não pode ser nulo.");
+
+            ValidateShelter(shelter);
+
+            if (shelter.Capacity <= 0)
+                throw new ArgumentException("A capacidade deve ser maior que zero.", nameof(shelter.Capacity));
+            
+            if (shelter.CurrentOccupancy < 0)
+                shelter.CurrentOccupancy = 0;
+            
+            if (shelter.CurrentOccupancy > shelter.Capacity)
+                throw new ArgumentException("A ocupação atual não pode ser maior que a capacidade.", nameof(shelter.CurrentOccupancy));
+
+            try
+            {
+                await _unitOfWork.Shelters.AddAsync(shelter);
+                await _unitOfWork.SaveChangesAsync();
+                return shelter;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao salvar o abrigo no banco de dados.", ex);
+            }
+        }
+
+        public async Task<Shelter?> UpdateShelterAsync(long id, Shelter updatedShelter)
+        {
+            if (id <= 0)
+                throw new ArgumentException("O ID do abrigo deve ser maior que zero.", nameof(id));
+            if (updatedShelter == null)
+                throw new ArgumentNullException(nameof(updatedShelter), "O abrigo atualizado não pode ser nulo.");
+            if (id != updatedShelter.Id)
+                throw new ArgumentException("O ID fornecido não corresponde ao ID do abrigo.", nameof(id));
+
+            ValidateShelter(updatedShelter);
+
+            try
+            {
+                var existingShelter = await _unitOfWork.Shelters.GetByIdAsync(id);
+                if (existingShelter == null)
+                    return null;
+
+                existingShelter.Name = updatedShelter.Name;
+                existingShelter.Address = updatedShelter.Address;
+                existingShelter.Capacity = updatedShelter.Capacity;
+                existingShelter.CurrentOccupancy = updatedShelter.CurrentOccupancy;
+                existingShelter.Latitude = updatedShelter.Latitude;
+                existingShelter.Longitude = updatedShelter.Longitude;
+
+                await _unitOfWork.Shelters.UpdateAsync(existingShelter);
+                await _unitOfWork.SaveChangesAsync();
+                return existingShelter;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao atualizar o abrigo com ID {id}.", ex);
+            }
         }
 
         public async Task<bool> DeleteShelterAsync(long id)
         {
-            var shelter = await _context.Shelters.FindAsync(id);
-            if (shelter == null)
-                return false;
+            if (id <= 0)
+                throw new ArgumentException("O ID do abrigo deve ser maior que zero.", nameof(id));
 
-            _context.Shelters.Remove(shelter);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                var shelter = await _unitOfWork.Shelters.GetByIdAsync(id);
+                if (shelter == null)
+                    return false;
+
+                await _unitOfWork.Shelters.DeleteAsync(shelter);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao deletar o abrigo com ID {id}.", ex);
+            }
         }
 
         public async Task<bool> UpdateCapacityAsync(long id, int newCurrentOccupancy)
         {
-            var shelter = await _context.Shelters.FindAsync(id);
-            if (shelter == null)
-                return false;
+            if (id <= 0)
+                throw new ArgumentException("O ID do abrigo deve ser maior que zero.", nameof(id));
+            if (newCurrentOccupancy < 0)
+                throw new ArgumentException("A ocupação atual não pode ser negativa.", nameof(newCurrentOccupancy));
 
-            if (newCurrentOccupancy < 0 || newCurrentOccupancy > shelter.Capacity)
-                throw new ArgumentException("Ocupação inválida");
-
-            shelter.CurrentOccupancy = newCurrentOccupancy;
-            
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                bool result = await _unitOfWork.Shelters.UpdateOccupancyAsync(id, newCurrentOccupancy);
+                if (result)
+                    await _unitOfWork.SaveChangesAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Erro ao atualizar ocupação do abrigo com ID {id}.", ex);
+            }
         }
 
-        // formula de haversine
-        private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        private static void ValidateShelter(Shelter shelter)
         {
-            const double R = 6371; // raio da terra em km
-
-            var dLat = ToRadians(lat2 - lat1);
-            var dLon = ToRadians(lon2 - lon1);
-
-            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                    Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            var distance = R * c;
-
-            return distance;
-        }
-
-        private double ToRadians(double degrees)
-        {
-            return degrees * (Math.PI / 180);
+            if (string.IsNullOrWhiteSpace(shelter.Name))
+                throw new ArgumentException("O nome do abrigo é obrigatório.", nameof(shelter.Name));
+            if (string.IsNullOrWhiteSpace(shelter.Address))
+                throw new ArgumentException("O endereço do abrigo é obrigatório.", nameof(shelter.Address));
+            if (shelter.Latitude < -90 || shelter.Latitude > 90)
+                throw new ArgumentException("A latitude deve estar entre -90 e 90 graus.", nameof(shelter.Latitude));
+            if (shelter.Longitude < -180 || shelter.Longitude > 180)
+                throw new ArgumentException("A longitude deve estar entre -180 e 180 graus.", nameof(shelter.Longitude));
         }
     }
 }
