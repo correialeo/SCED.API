@@ -1,4 +1,5 @@
 using SCED.API.Domain.Entity;
+using SCED.API.Domain.Enums;
 
 namespace SCED.API.Interfaces
 {
@@ -10,5 +11,8 @@ namespace SCED.API.Interfaces
         Task<Resource> GetResourceByIdAsync(long id);
         Task<Resource> UpdateResourceAsync(long id, Resource updatedResource);
         Task<bool> DeleteResourceAsync(long id);
+        Task<IEnumerable<Resource>> GetResourcesByTypeAsync(ResourceType type);
+        Task<IEnumerable<Resource>> GetResourcesByStatusAsync(ResourceStatus status);
+        Task<IEnumerable<Resource>> GetAvailableResourcesAsync();
     }
 }

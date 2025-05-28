@@ -12,5 +12,6 @@ namespace SCED.API.Interfaces
         Task<Shelter> UpdateShelterAsync(long id, Shelter updatedShelter);
         Task<bool> DeleteShelterAsync(long id);
         Task<bool> UpdateCapacityAsync(long id, int newCurrentOccupancy);
+        Task<IEnumerable<Shelter>> GetSheltersByCapacityRangeAsync(int minCapacity, int maxCapacity);
     }
 }
