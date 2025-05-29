@@ -4,6 +4,7 @@
     {
         Volunteer,
         Victim,
-        Authority
+        Authority,
+        Administrator,
     }
 }
