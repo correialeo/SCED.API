@@ -33,9 +33,13 @@ namespace SCED.API.Controllers
         /// </summary>
         /// <returns>Lista de todos os recursos</returns>
         /// <response code="200">Retorna a lista de recursos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Resource>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Resource>>> GetResources()
         {
@@ -57,11 +61,15 @@ namespace SCED.API.Controllers
         /// <returns>Dados do recurso solicitado</returns>
         /// <response code="200">Retorna o recurso encontrado</response>
         /// <response code="400">ID inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Recurso não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("{id:long}")]
         [ProducesResponseType(typeof(Resource), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Resource>> GetResource(long id)
@@ -88,10 +96,14 @@ namespace SCED.API.Controllers
         /// <returns>Lista de recursos do tipo especificado</returns>
         /// <response code="200">Retorna a lista de recursos do tipo especificado</response>
         /// <response code="400">Tipo de recurso inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("type/{type}")]
         [ProducesResponseType(typeof(IEnumerable<Resource>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Resource>>> GetResourcesByType(ResourceType type)
         {
@@ -115,9 +127,13 @@ namespace SCED.API.Controllers
         /// </summary>
         /// <returns>Lista de recursos disponíveis</returns>
         /// <response code="200">Retorna a lista de recursos disponíveis</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("available")]
         [ProducesResponseType(typeof(IEnumerable<Resource>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Resource>>> GetAvailableResources()
         {
@@ -139,10 +155,14 @@ namespace SCED.API.Controllers
         /// <returns>Lista de recursos com o status especificado</returns>
         /// <response code="200">Retorna a lista de recursos com o status especificado</response>
         /// <response code="400">Status do recurso inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("status/{status}")]
         [ProducesResponseType(typeof(IEnumerable<Resource>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Resource>>> GetResourcesByStatus(ResourceStatus status)
         {
@@ -170,10 +190,14 @@ namespace SCED.API.Controllers
         /// <returns>Lista de recursos dentro do raio especificado</returns>
         /// <response code="200">Retorna a lista de recursos na área especificada</response>
         /// <response code="400">Parâmetros de localização ou raio inválidos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("nearby")]
         [ProducesResponseType(typeof(IEnumerable<Resource>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Resource>>> GetNearbyResources(
             [FromQuery] double latitude,
@@ -209,10 +233,14 @@ namespace SCED.API.Controllers
         /// <returns>Dados do recurso criado</returns>
         /// <response code="201">Recurso criado com sucesso</response>
         /// <response code="400">Dados do recurso inválidos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpPost]
         [ProducesResponseType(typeof(Resource), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "Administrator, Authority, Volunteer")]
         public async Task<ActionResult<Resource>> PostResource([FromBody] Resource resource)
@@ -243,11 +271,15 @@ namespace SCED.API.Controllers
         /// <returns>Confirmação da atualização</returns>
         /// <response code="204">Recurso atualizado com sucesso</response>
         /// <response code="400">Dados inválidos ou ID não corresponde</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Recurso não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpPut("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "Administrator, Authority, Volunteer")]
@@ -278,11 +310,15 @@ namespace SCED.API.Controllers
         /// <returns>Confirmação da remoção</returns>
         /// <response code="204">Recurso removido com sucesso</response>
         /// <response code="400">ID inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Recurso não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpDelete("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "Administrator")]

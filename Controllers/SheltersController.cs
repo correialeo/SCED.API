@@ -33,9 +33,13 @@ namespace SCED.API.Controllers
         /// </summary>
         /// <returns>Lista de todos os abrigos</returns>
         /// <response code="200">Retorna a lista de abrigos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Shelter>>> GetShelters()
         {
@@ -57,11 +61,15 @@ namespace SCED.API.Controllers
         /// <returns>Dados do abrigo solicitado</returns>
         /// <response code="200">Retorna o abrigo encontrado</response>
         /// <response code="400">ID inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Abrigo não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("{id:long}")]
         [ProducesResponseType(typeof(Shelter), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Shelter>> GetShelter(long id)
@@ -86,9 +94,13 @@ namespace SCED.API.Controllers
         /// </summary>
         /// <returns>Lista de abrigos disponíveis</returns>
         /// <response code="200">Retorna a lista de abrigos disponíveis</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("available")]
         [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Shelter>>> GetAvailableShelters()
         {
@@ -112,10 +124,14 @@ namespace SCED.API.Controllers
         /// <returns>Lista de abrigos dentro do raio especificado</returns>
         /// <response code="200">Retorna a lista de abrigos na área especificada</response>
         /// <response code="400">Parâmetros de localização ou raio inválidos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("nearby")]
         [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Shelter>>> GetNearbyShelters(
             [FromQuery] double latitude,
@@ -152,10 +168,14 @@ namespace SCED.API.Controllers
         /// <returns>Lista de abrigos dentro da faixa de capacidade especificada</returns>
         /// <response code="200">Retorna a lista de abrigos na faixa de capacidade</response>
         /// <response code="400">Faixa de capacidade inválida</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpGet("capacity-range")]
         [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<Shelter>>> GetSheltersByCapacityRange(
             [FromQuery] int minCapacity,
@@ -188,10 +208,14 @@ namespace SCED.API.Controllers
         /// <returns>Dados do abrigo criado</returns>
         /// <response code="201">Abrigo criado com sucesso</response>
         /// <response code="400">Dados do abrigo inválidos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpPost]
         [ProducesResponseType(typeof(Shelter), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "Authority")]
         public async Task<ActionResult<Shelter>> PostShelter([FromBody] Shelter shelter)
@@ -230,11 +254,15 @@ namespace SCED.API.Controllers
         /// <returns>Confirmação da atualização</returns>
         /// <response code="204">Abrigo atualizado com sucesso</response>
         /// <response code="400">Dados inválidos ou ID não corresponde</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Abrigo não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpPut("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize(Roles = "Authority")]
@@ -266,11 +294,15 @@ namespace SCED.API.Controllers
         /// <returns>Confirmação da atualização</returns>
         /// <response code="204">Ocupação atualizada com sucesso</response>
         /// <response code="400">Dados inválidos</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Abrigo não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpPatch("{id:long}/capacity")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize (Roles = "Authority")]
@@ -301,11 +333,15 @@ namespace SCED.API.Controllers
         /// <returns>Confirmação da remoção</returns>
         /// <response code="204">Abrigo removido com sucesso</response>
         /// <response code="400">ID inválido</response>
+        /// <response code="401">Token de autenticação inválido ou ausente</response>
+        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         /// <response code="404">Abrigo não encontrado</response>
         /// <response code="500">Erro interno do servidor</response>
         [HttpDelete("{id:long}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [Authorize (Roles = "Authority")]
