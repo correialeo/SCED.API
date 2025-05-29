@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using SCED.API;
 using SCED.API.Infrasctructure.Context;
 
 namespace SCED.API.Extensions;

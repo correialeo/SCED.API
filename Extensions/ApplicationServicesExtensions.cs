@@ -1,7 +1,7 @@
+using SCED.API.Application.Interfaces;
+using SCED.API.Application.Services;
 using SCED.API.Domain.Interfaces;
 using SCED.API.Infrastructure.Repositories;
-using SCED.API.Interfaces;
-using SCED.API.Services;
 
 namespace SCED.API.Extensions;
 
