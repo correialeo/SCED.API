@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Enums;
 using SCED.API.Interfaces;
@@ -210,6 +211,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(typeof(Alert), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize (Roles = "Administrator, Authority")]
         public async Task<ActionResult<Alert>> PostAlert([FromBody] Alert alert)
         {
             try
@@ -242,6 +244,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize (Roles = "Administrator, Authority")]
         public async Task<IActionResult> PutAlert(long id, [FromBody] Alert alert)
         {
             try
@@ -273,6 +276,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize (Roles = "Administrator, Authority")]
         public async Task<IActionResult> DeleteAlert(long id)
         {
             try

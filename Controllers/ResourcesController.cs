@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Enums;
 using SCED.API.Interfaces;
@@ -13,6 +14,7 @@ namespace SCED.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
+    [Authorize]
     public class ResourcesController : ControllerBase
     {
         private readonly IResourceService _resourceService;
@@ -212,6 +214,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(typeof(Resource), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Administrator, Authority, Volunteer")]
         public async Task<ActionResult<Resource>> PostResource([FromBody] Resource resource)
         {
             if (resource == null)
@@ -247,6 +250,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Administrator, Authority, Volunteer")]
         public async Task<IActionResult> PutResource(long id, [FromBody] Resource resource)
         {
             if (resource == null)
@@ -281,6 +285,7 @@ namespace SCED.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Authorize(Roles = "Administrator")]
         public async Task<IActionResult> DeleteResource(long id)
         {
             try

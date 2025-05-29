@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Enums;
 using SCED.API.DTO;
@@ -14,6 +15,7 @@ namespace SCED.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
+    [Authorize(Roles = "Administrator, Authority")]
     public class DevicesController : ControllerBase
     {
         private readonly IDeviceService _deviceService;
