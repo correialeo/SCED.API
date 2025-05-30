@@ -125,6 +125,18 @@ namespace SCED.API.Application.Services
             }
         }
 
+        public async Task<IEnumerable<DeviceData>> GetAllDataAsync()
+        {
+            try
+            {
+                return await _unitOfWork.DeviceData.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Erro ao buscar todos os dados dos dispositivos.", ex);
+            }
+        }
+
         private async Task<Alert?> ProcessAlertLogicAsync(Device device, DeviceData deviceData)
         {
             try

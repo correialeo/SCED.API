@@ -97,8 +97,8 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<DeviceData>>> GetDataByDeviceIdAndPeriod(
-            long deviceId, 
-            [FromQuery] DateTime from, 
+            long deviceId,
+            [FromQuery] DateTime from,
             [FromQuery] DateTime to)
         {
             try
@@ -170,6 +170,28 @@ namespace SCED.API.Presentation.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Erro interno: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Obtém todos os dados de todos os dispositivos
+        /// </summary>
+        /// <returns>Coleção de todos os dados dos dispositivos</returns>
+        /// <response code="200">Retorna todos os dados</response>
+        /// <response code="500">Erro interno do servidor</response>
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<DeviceData>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<DeviceData>>> GetAllData()
+        {
+            try
+            {
+                IEnumerable<DeviceData>? data = await _deviceDataService.GetAllDataAsync();
+                return Ok(data);
             }
             catch (Exception ex)
             {
