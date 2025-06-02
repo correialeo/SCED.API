@@ -9,10 +9,12 @@ namespace SCED.API.Application.Services
     public class DeviceDataService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly StatisticsService _statisticsService;
 
-        public DeviceDataService(IUnitOfWork unitOfWork)
+        public DeviceDataService(IUnitOfWork unitOfWork, StatisticsService statisticsService)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _statisticsService = statisticsService ?? throw new ArgumentNullException(nameof(statisticsService));
         }
 
         public async Task<DeviceData> ReceiveDataAsync(DeviceDataDTO deviceDataDTO)
@@ -48,6 +50,8 @@ namespace SCED.API.Application.Services
                         await _unitOfWork.Alerts.AddAsync(alert);
                         await _unitOfWork.SaveChangesAsync();
                     }
+
+                    await _statisticsService.UpdateRealTimeStatisticsAsync(deviceData.DeviceId, deviceData.Value);
 
                     await transaction.CommitAsync();
                     return deviceData;

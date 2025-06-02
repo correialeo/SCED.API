@@ -16,6 +16,7 @@ public static class ApplicationServicesExtensions
         services.AddScoped<IAlertService, AlertService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<StatisticsService>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAlertRepository, AlertRepository>();
