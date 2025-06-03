@@ -1,3 +1,6 @@
+
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
 using SCED.API.Application.Interfaces;
 using SCED.API.Domain.Entity;
 using SCED.API.Domain.Interfaces;
@@ -12,12 +15,14 @@ namespace SCED.API.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly ITokenService _tokenService;
         private readonly ILogger<AuthService> _logger;
+        private readonly IDistributedCache _cache;
 
-        public AuthService(IUserRepository userRepository, ITokenService tokenService, ILogger<AuthService> logger)
+        public AuthService(IUserRepository userRepository, ITokenService tokenService, ILogger<AuthService> logger, IDistributedCache cache)
         {
             _userRepository = userRepository;
             _tokenService = tokenService;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -123,6 +128,10 @@ namespace SCED.API.Application.Services
             if (string.IsNullOrWhiteSpace(token))
                 return false;
 
+            string? cached = await _cache.GetStringAsync($"blacklist:{token}");
+            if (!string.IsNullOrEmpty(cached))
+                return false;
+
             try
             {
                 ClaimsPrincipal? principal = _tokenService.ValidateToken(token);
@@ -163,6 +172,32 @@ namespace SCED.API.Application.Services
                 _logger.LogError(ex, "Erro ao obter usuário do token");
                 return null;
             }
+        }
+
+        public async Task RevokeTokenAsync(string token)
+        {
+            var principal = _tokenService.ValidateToken(token);
+            if (principal == null)
+                throw new SecurityTokenException("Token inválido");
+
+            var expClaim = principal.FindFirst("exp");
+            if (expClaim == null)
+                throw new SecurityTokenException("Token sem expiração");
+
+            if (!long.TryParse(expClaim.Value, out long expTimestamp))
+                throw new SecurityTokenException("Data de expiração inválida");
+
+            var expTime = DateTimeOffset.FromUnixTimeSeconds(expTimestamp);
+
+            if (expTime <= DateTimeOffset.UtcNow)
+                throw new SecurityTokenException("Token já expirado");
+
+            var timeRemaining = expTime - DateTimeOffset.UtcNow;
+
+            await _cache.SetStringAsync($"blacklist:{token}", "revoked", new DistributedCacheEntryOptions
+            {
+                AbsoluteExpiration = expTime
+            });
         }
 
         private void ValidateRegisterRequest(RegisterRequest request)

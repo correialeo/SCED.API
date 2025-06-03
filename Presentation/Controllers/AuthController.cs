@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using SCED.API.Application.Interfaces;
 using SCED.API.Presentation.DTO;
 using System.ComponentModel.DataAnnotations;
@@ -145,7 +146,7 @@ namespace SCED.API.Presentation.Controllers
         }
 
         /// <summary>
-        /// Realiza logout do usuário (invalidação do token - se implementado)
+        /// Realiza logout do usuário
         /// </summary>
         /// <returns>Status da operação</returns>
         /// <response code="200">Logout realizado com sucesso</response>
@@ -155,8 +156,20 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult> Logout()
         {
-            // Se você implementar blacklist de tokens, aqui seria o lugar
-            return Ok(new { message = "Logout realizado com sucesso" });
+            string? token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            if (string.IsNullOrEmpty(token))
+                return Unauthorized(new { message = "Token não fornecido" });
+
+            try
+            {
+                await _authService.RevokeTokenAsync(token);
+                return Ok(new { message = "Logout realizado com sucesso" });
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
         }
     }
 

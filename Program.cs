@@ -8,6 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 Settings.Initialize(builder.Configuration);
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+
 builder.Services.AddDatabaseServices(builder.Configuration);
 builder.Services.AddControllerServices();
 builder.Services.AddAuthenticationServices(builder.Configuration);

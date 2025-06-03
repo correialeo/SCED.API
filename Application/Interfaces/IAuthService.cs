@@ -8,6 +8,7 @@ namespace SCED.API.Application.Interfaces
         Task<UserDTO> RegisterAsync(RegisterRequest request);
         Task<bool> ValidateTokenAsync(string token);
         Task<UserDTO?> GetUserFromTokenAsync(string token);
+        Task RevokeTokenAsync(string token);
     }
 
 }
