@@ -30,7 +30,7 @@ namespace SCED.API.Presentation.Controllers
         /// <response code="401">Token de autenticação inválido ou ausente</response>
         /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
         [HttpGet]
-        [Authorize(Roles = "Administrator,Authority")]
+        [Authorize(Roles = "Administrator")]
         [ProducesResponseType(typeof(IEnumerable<UserDTO>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

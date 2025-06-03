@@ -215,7 +215,7 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [Authorize(Roles = "Authority")]
+        [Authorize(Roles = "Authority, Administrator")]
         public async Task<ActionResult<Shelter>> PostShelter([FromBody] Shelter shelter)
         {
             if (shelter == null)
@@ -263,7 +263,7 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [Authorize(Roles = "Authority")]
+        [Authorize(Roles = "Authority, Administrator")]
         public async Task<IActionResult> PutShelter(long id, [FromBody] Shelter shelter)
         {
             if (shelter == null)
@@ -303,7 +303,7 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [Authorize (Roles = "Authority")]
+        [Authorize (Roles = "Authority, Administrator")]
         public async Task<IActionResult> UpdateShelterCapacity(long id, [FromBody] UpdateCapacityRequestDTO request)
         {
             if (request == null)
@@ -342,7 +342,7 @@ namespace SCED.API.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [Authorize (Roles = "Authority")]
+        [Authorize (Roles = "Authority, Administrator")]
         public async Task<IActionResult> DeleteShelter(long id)
         {
             try
