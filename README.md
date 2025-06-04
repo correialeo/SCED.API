@@ -98,6 +98,11 @@ dotnet restore
 
 ### 5. Configure o Banco de Dados
 
+Instale o EF na versão 8.0.16:
+```bash
+dotnet tool install --global dotnet-ef --version 8.0.16
+```
+
 Aplique as migrations para criar as tabelas:
 
 ```bash
