@@ -23,5 +23,21 @@ RUN dotnet restore SCED.API.sln
 
 RUN dotnet publish SCED.API.sln -c Release -o out
 
+RUN groupadd -r appuser && useradd -r -g appuser -m appuser
+
+USER appuser
+ENV PATH=$PATH:/home/appuser/.dotnet/tools
+RUN dotnet tool install --global dotnet-ef
+
+USER root
+
 WORKDIR /App/out
+
+RUN chown -R appuser:appuser /App/out
+
+EXPOSE 8080
+EXPOSE 8081
+
+USER appuser
+
 ENTRYPOINT ["dotnet", "SCED.API.dll"]

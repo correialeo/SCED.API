@@ -4,6 +4,7 @@ services:
     image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_CHARSET: utf8mb4
     ports:
         - ${DISASTER_DB_PORT}:3306
     volumes:
@@ -11,6 +12,10 @@ services:
     networks:
       - disaster-api
       - disaster-database
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   disaster_shield_api:
     container_name: ${ENV}.disaster.shield.api
@@ -24,13 +29,16 @@ services:
           DATABASE__NAME: ${DATABASE__NAME}
           DATABASE__USER: ${DATABASE__USER}
           DATABASE__PASSWORD: ${DATABASE__PASSWORD}
+          ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
     ports:
       - ${DISASTER_API_PORT}:8080
     networks:
       - disaster-api
       - disaster-database
     depends_on:
-      - disaster_db
+      disaster_db:
+        condition: service_healthy
+    restart: unless-stopped
 
 networks:
   disaster-api:
