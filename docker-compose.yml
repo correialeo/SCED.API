@@ -1,0 +1,42 @@
+services:
+  disaster_db:
+    container_name: ${ENV}.disaster.shield.db
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+        - ${DISASTER_DB_PORT}:3306
+    volumes:
+        - dbdata:/var/lib/mysql
+    networks:
+      - disaster-api
+      - disaster-database
+
+  disaster_shield_api:
+    container_name: ${ENV}.disaster.shield.api
+    image: correialeo/disaster.shield.api:${MajorMinorPatch}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+          DATABASE__SERVER: disaster_db
+          DATABASE__PORT: ${DATABASE__PORT}
+          DATABASE__NAME: ${DATABASE__NAME}
+          DATABASE__USER: ${DATABASE__USER}
+          DATABASE__PASSWORD: ${DATABASE__PASSWORD}
+    ports:
+      - ${DISASTER_API_PORT}:8080
+    networks:
+      - disaster-api
+      - disaster-database
+    depends_on:
+      - disaster_db
+
+networks:
+  disaster-api:
+    driver: bridge
+  disaster-database:
+    driver: bridge
+
+volumes:
+  dbdata:
