@@ -20,9 +20,9 @@ services:
   disaster_shield_api:
     container_name: ${ENV}.disaster.shield.api
     image: correialeo/disaster.shield.api:${MajorMinorPatch}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     environment:
           DATABASE__SERVER: disaster_db
           DATABASE__PORT: ${DATABASE__PORT}
