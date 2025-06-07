@@ -40,6 +40,19 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  disaster_shield_api_java:
+    container_name: ${ENV}.disaster.shield.api.java
+    image: britojulia/disaster-shield-app:${MajorMinorPatch}
+    ports:
+      - ${DISASTER_API_JAVA_PORT}:8080
+    networks:
+      - disaster-api
+      - disaster-database
+    depends_on:
+      disaster_db:
+        condition: service_healthy
+    restart: unless-stopped
+
 networks:
   disaster-api:
     driver: bridge
