@@ -78,63 +78,6 @@ namespace SCED.API.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Obtém alertas filtrados por tipo
-        /// </summary>
-        /// <param name="type">Tipo do alerta (ex: Fire, Flood, etc.)</param>
-        /// <returns>Lista de alertas do tipo especificado</returns>
-        /// <response code="200">Retorna a lista de alertas do tipo especificado</response>
-        /// <response code="400">Tipo de alerta inválido</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpGet("type/{type}")]
-        [ProducesResponseType(typeof(IEnumerable<Alert>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Alert>>> GetAlertsByType(AlertType type)
-        {
-            try
-            {
-                IEnumerable<Alert> alerts = await _alertService.GetAlertsByTypeAsync(type);
-                return Ok(alerts);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Obtém alertas filtrados por severidade
-        /// </summary>
-        /// <param name="severity">Nível de severidade (1-10)</param>
-        /// <returns>Lista de alertas com a severidade especificada</returns>
-        /// <response code="200">Retorna a lista de alertas com a severidade especificada</response>
-        /// <response code="400">Severidade inválida (deve estar entre 1 e 10)</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpGet("severity/{severity:int}")]
-        [ProducesResponseType(typeof(IEnumerable<Alert>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Alert>>> GetAlertsBySeverity(int severity)
-        {
-            try
-            {
-                IEnumerable<Alert> alerts = await _alertService.GetAlertsBySeverityAsync(severity);
-                return Ok(alerts);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
 
         /// <summary>
         /// Obtém alertas dentro de um raio específico de uma localização
@@ -170,64 +113,6 @@ namespace SCED.API.Presentation.Controllers
             }
         }
 
-        /// <summary>
-        /// Obtém alertas criados a partir de uma data específica
-        /// </summary>
-        /// <param name="since">Data de referência (formato ISO 8601)</param>
-        /// <returns>Lista de alertas criados após a data especificada</returns>
-        /// <response code="200">Retorna a lista de alertas recentes</response>
-        /// <response code="400">Data inválida</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpGet("recent")]
-        [ProducesResponseType(typeof(IEnumerable<Alert>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Alert>>> GetRecentAlerts([FromQuery] DateTime since)
-        {
-            try
-            {
-                IEnumerable<Alert> alerts = await _alertService.GetRecentAlertsAsync(since);
-                return Ok(alerts);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Cria um novo alerta no sistema
-        /// </summary>
-        /// <param name="alert">Dados do alerta a ser criado</param>
-        /// <returns>Dados do alerta criado</returns>
-        /// <response code="201">Alerta criado com sucesso</response>
-        /// <response code="400">Dados do alerta inválidos</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpPost]
-        [ProducesResponseType(typeof(Alert), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        [Authorize (Roles = "Administrator, Authority")]
-        public async Task<ActionResult<Alert>> PostAlert([FromBody] Alert alert)
-        {
-            try
-            {
-                Alert createdAlert = await _alertService.CreateAlertAsync(alert);
-                return CreatedAtAction(nameof(GetAlert), new { id = createdAlert.Id }, createdAlert);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
 
         /// <summary>
         /// Atualiza um alerta existente

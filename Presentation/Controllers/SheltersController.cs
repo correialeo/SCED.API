@@ -88,32 +88,6 @@ namespace SCED.API.Presentation.Controllers
         }
 
         /// <summary>
-        /// Obtém abrigos disponíveis para alocação
-        /// </summary>
-        /// <returns>Lista de abrigos disponíveis</returns>
-        /// <response code="200">Retorna a lista de abrigos disponíveis</response>
-        /// <response code="401">Token de autenticação inválido ou ausente</response>
-        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpGet("available")]
-        [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Shelter>>> GetAvailableShelters()
-        {
-            try
-            {
-                IEnumerable<Shelter> shelters = await _shelterService.GetAvailableSheltersAsync();
-                return Ok(shelters);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
-
-        /// <summary>
         /// Obtém abrigos dentro de um raio específico de uma localização
         /// </summary>
         /// <param name="latitude">Latitude da localização central</param>
@@ -146,47 +120,6 @@ namespace SCED.API.Presentation.Controllers
                     return BadRequest("O raio deve estar entre 0 e 1000 km.");
 
                 IEnumerable<Shelter> shelters = await _shelterService.GetNearbySheltersAsync(latitude, longitude, radiusKm);
-                return Ok(shelters);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Erro interno: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Obtém abrigos filtrados por faixa de capacidade
-        /// </summary>
-        /// <param name="minCapacity">Capacidade mínima</param>
-        /// <param name="maxCapacity">Capacidade máxima</param>
-        /// <returns>Lista de abrigos dentro da faixa de capacidade especificada</returns>
-        /// <response code="200">Retorna a lista de abrigos na faixa de capacidade</response>
-        /// <response code="400">Faixa de capacidade inválida</response>
-        /// <response code="401">Token de autenticação inválido ou ausente</response>
-        /// <response code="403">Usuário não possui permissão para acessar este recurso</response>
-        /// <response code="500">Erro interno do servidor</response>
-        [HttpGet("capacity-range")]
-        [ProducesResponseType(typeof(IEnumerable<Shelter>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<Shelter>>> GetSheltersByCapacityRange(
-            [FromQuery] int minCapacity,
-            [FromQuery] int maxCapacity)
-        {
-            try
-            {
-                if (minCapacity < 0)
-                    return BadRequest("A capacidade mínima não pode ser negativa.");
-                if (maxCapacity <= minCapacity)
-                    return BadRequest("A capacidade máxima deve ser maior que a mínima.");
-
-                IEnumerable<Shelter> shelters = await _shelterService.GetSheltersByCapacityRangeAsync(minCapacity, maxCapacity);
                 return Ok(shelters);
             }
             catch (ArgumentException ex)
