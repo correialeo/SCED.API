@@ -10,6 +10,161 @@ Sistema de Coordenação de Emergência Distribuído que atua como uma solução
 - **Gestão de Abrigos**: Administração de abrigos de emergência (apenas autoridades)
 - **Localização de Emergência**: Mapa para vítimas localizarem recursos e abrigos próximos
 - **Sistema de Autenticação**: Controle de acesso baseado em roles (Volunteer, Victim, Authority, Administrator)
+- **Dashboard de Estatísticas**: Visualização de dados e tendências em tempo real
+
+## 🏗️ Arquitetura do Sistema
+
+### Diagrama de Classes
+
+```mermaid
+classDiagram
+    class Alert {
+        +long Id
+        +AlertType Type
+        +int Severity
+        +double Latitude
+        +double Longitude
+        +DateTime Timestamp
+        +string Description
+        +Alert()
+        +Alert(params)
+    }
+
+    class Device {
+        +long Id
+        +DeviceType Type
+        +DeviceStatus Status
+        +double Latitude
+        +double Longitude
+        +ICollection DeviceData
+        +Device()
+        +Device(params)
+    }
+
+    class DeviceData {
+        +long Id
+        +long DeviceId
+        +double Value
+        +DateTime Timestamp
+        +Device Device
+        +DeviceData()
+        +DeviceData(params)
+    }
+
+    class Resource {
+        +long Id
+        +ResourceType Type
+        +int Quantity
+        +double Latitude
+        +double Longitude
+        +ResourceStatus Status
+        +Resource()
+        +Resource(params)
+    }
+
+    class Shelter {
+        +long Id
+        +string Name
+        +string Address
+        +int Capacity
+        +int CurrentOccupancy
+        +double Latitude
+        +double Longitude
+        +Shelter()
+        +Shelter(params)
+    }
+
+    class User {
+        +long Id
+        +string Username
+        +string PasswordHash
+        +UserRole Role
+        +string Necessities
+        +double Latitude
+        +double Longitude
+        +User()
+        +User(params)
+    }
+
+    class AlertType {
+        <<enumeration>>
+        Flood
+        Fire
+        Earthquake
+        HeavyRain
+        ExtremeHeat
+        ExtremeCold
+        Landslide
+    }
+
+    class DeviceType {
+        <<enumeration>>
+        TemperatureSensor
+        HumiditySensor
+        WaterLevelSensor
+        VibrationSensor
+        SmokeSensor
+        MotionSensor
+        Gateway
+    }
+
+    class DeviceStatus {
+        <<enumeration>>
+        Operational
+        UnderMaintenance
+        Decommissioned
+    }
+
+    class ResourceType {
+        <<enumeration>>
+        Water
+        Food
+        MedicalSupplies
+        RescueTeam
+        Shelter
+        Clothing
+        PowerSupply
+    }
+
+    class ResourceStatus {
+        <<enumeration>>
+        Available
+        InUse
+        Exhausted
+        Damaged
+        Pending
+    }
+
+    class UserRole {
+        <<enumeration>>
+        Volunteer
+        Victim
+        Authority
+        Administrator
+    }
+
+    Device --o DeviceData
+    Alert --> AlertType
+    Device --> DeviceType
+    Device --> DeviceStatus
+    Resource --> ResourceType
+    Resource --> ResourceStatus
+    User --> UserRole
+```
+
+### Arquitetura de Camadas
+
+```mermaid
+graph TB
+    A[Presentation Layer<br/>Controllers & DTOs] --> B[Application Layer<br/>Services & Interfaces]
+    B --> C[Domain Layer<br/>Entities & Enums]
+    B --> D[Infrastructure Layer<br/>Data Access & Repositories]
+    D --> E[(MySQL Database)]
+    
+    F[ESP32 Sensors] --> G[Mesh Network] --> A
+    A --> H[JWT Authentication]
+    A --> I[Swagger Documentation]
+```
 
 ## 📋 Pré-requisitos
 
@@ -146,7 +301,7 @@ O sistema utiliza autenticação JWT com diferentes roles de usuário. Para aces
 - `Volunteer` - Voluntários (podem criar recursos)
 - `Victim` - Vítimas (acesso a recursos e abrigos)
 - `Authority` - Autoridades (podem criar recursos e abrigos)
-- `Administrator` - Administradores (acesso quase completo)
+- `Administrator` - Administradores (acesso completo)
 
 #### 2. Fazer Login
 
@@ -231,12 +386,148 @@ Bearer {seu_token_aqui}
 | GET | `/api/Shelters/capacity-range` | Por faixa de capacidade |
 | PATCH | `/api/Shelters/{id}/capacity` | Atualizar ocupação |
 
+### 📈 Estatísticas
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/Statistics/dashboard` | Obtém as estatísticas completas do dashboard |
+| GET | `/api/Statistics/locations` | Obtém estatísticas de alertas agrupadas por localização geográfica |
+| GET | `/api/Statistics/device-types` | Obtém estatísticas dos dispositivos agrupadas por tipo |
+| GET | `/api/Statistics/alert-trends` | Obtém as tendências temporais dos alertas |
+| GET | `/api/Statistics/hotspots` | Obtém os hotspots geográficos com maior concentração de alertas |
+| POST | `/api/Statistics/realtime-update` | Atualiza as estatísticas em tempo real com novos dados de dispositivo |
+
 ### 👤 Usuários
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | GET | `/api/Users` | Listar usuários |
 | GET | `/api/Users/{id}` | Buscar por ID |
 | DELETE | `/api/Users/{id}` | Remover usuário |
+
+## 🧪 Testes da API
+
+### Configuração para Testes
+
+Para testar a API, recomendamos utilizar o Swagger integrado ou ferramentas como Postman/Insomnia. Aqui estão alguns cenários de teste essenciais:
+
+### Cenários de Teste Principais
+
+#### 1. Teste de Autenticação
+```bash
+# Registrar um novo usuário
+POST /api/Auth/register
+Content-Type: application/json
+
+{
+  "username": "maria.santos",
+  "password": "MinhaSenh@Segura123",
+  "role": "Victim",
+  "necessities": "Preciso de água potável e alimentos não perecíveis",
+  "latitude": -23.5505,
+  "longitude": -46.6333
+}
+
+# Login do usuário
+POST /api/Auth/login
+Content-Type: application/json
+
+{
+  "username": "teste.usuario",
+  "password": "Teste@123"
+}
+```
+
+É recomendado criar um usuário de role Administrator para poder testar todos os endpoints.
+
+#### 2. Teste de Dispositivos e Sensores
+```bash
+# Cadastrar um dispositivo
+POST /api/Devices
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "type": "TemperatureSensor",
+  "status": "Operational",
+  "latitude": -23.5505,
+  "longitude": -46.6333
+}
+
+# Enviar dados do sensor
+POST /api/DeviceData
+Content-Type: application/json
+
+{
+  "deviceId": 1,
+  "value": 85.5
+}
+```
+
+#### 3. Teste de Alertas Automáticos
+```bash
+
+# Buscar alertas recentes
+GET /api/Alerts/recent
+```
+
+#### 4. Teste de Recursos e Abrigos
+```bash
+# Criar recurso
+POST /api/Resources
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "type": "Food",
+  "quantity": 100,
+  "latitude": -23.5505,
+  "longitude": -46.6333,
+  "status": "Available"
+}
+
+# Criar abrigo (apenas Authority/Administrator)
+POST /api/Shelters
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "Abrigo Central",
+  "address": "Rua das Flores, 123",
+  "capacity": 200,
+  "currentOccupancy": 0,
+  "latitude": -23.5505,
+  "longitude": -46.6333
+}
+```
+
+#### 5. Teste de Estatísticas
+```bash
+# Obter dashboard completo
+GET /api/Statistics/dashboard
+
+# Obter hotspots de alertas
+GET /api/Statistics/hotspots?topN=10
+```
+
+### Testes de Integração
+
+Para testes mais abrangentes, siga esta sequência:
+
+1. **Fluxo Completo de Emergência**:
+   - Registre dispositivos em diferentes localizações
+   - Simule dados críticos dos sensores
+   - Verifique se alertas são gerados automaticamente
+   - Crie recursos de emergência
+   - Teste busca por recursos próximos
+
+2. **Teste de Roles e Permissões**:
+   - Teste acesso com diferentes roles (Victim, Volunteer, Authority)
+   - Verifique restrições de acesso aos endpoints
+   - Confirme que apenas Authority pode criar abrigos
+
+3. **Teste de Geolocalização**:
+   - Teste busca por raio em diferentes endpoints
+   - Verifique cálculos de distância
+   - Teste endpoints de "nearby"
 
 ## 💻 Desenvolvimento
 
@@ -273,7 +564,17 @@ dotnet ef database update
 
 # Reverter migration
 dotnet ef database update PreviousMigrationName
+
+# Executar testes
+dotnet test
+
+# Executar com hot reload
+dotnet watch run
 ```
+
+### Docker Compose e Dockerfile
+
+- Ambos se encontram dentro do repositório (utilizados para a matéria de Devops e deployar a aplicação e dependências).
 
 ## 🤝 Contribuição
 
