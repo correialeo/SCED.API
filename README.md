@@ -2,6 +2,11 @@
 
 Sistema de Coordenação de Emergência Distribuído que atua como uma solução corretiva para situações onde previsões da defesa civil ou outras autoridades podem falhar. O sistema utiliza sensores ESP32 em rede mesh para monitorar dados ambientais como nível de água, fumaça e outros indicadores críticos, processando automaticamente essas informações para gerar alertas em caso de anormalidades, e para ajudar comunidades em risco.
 
+## ▶️ Links para vídeos
+- [Link para vídeo de .NET](https://youtu.be/RgPryi2EXLA)
+- [Link para vídeo de DEVOPS](https://youtu.be/mWOL7gt8PQA)
+- [Link para PITCH](https://youtu.be/8D1A1Ji5vlc)
+
 ## 🚀 Funcionalidades
 
 - **Monitoramento em Tempo Real**: Coleta dados de sensores ESP32 via rede mesh
