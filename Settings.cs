@@ -43,7 +43,7 @@ namespace SCED.API
             string databaseUser = Environment.GetEnvironmentVariable("DATABASE__USER");
             string databasePass = Environment.GetEnvironmentVariable("DATABASE__PASSWORD");
 
-            string conectString = _configuration.GetConnectionString("mysql");
+            string conectString = _configuration.GetConnectionString("sqlServer");
             conectString = string.Format(conectString, databaseServer, databasePort, databaseName, databaseUser, databasePass);
 
             return conectString;

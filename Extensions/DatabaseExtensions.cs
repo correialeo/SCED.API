@@ -7,13 +7,11 @@ public static class DatabaseExtensions
 {
     public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration)
     {
-        string connectionString = Settings.GetConnectionString();
-
+        string connectionString = configuration.GetConnectionString("sqlServer");
         services.AddDbContext<DatabaseContext>(options =>
         {
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), options =>
+            options.UseSqlServer(connectionString, options =>
             {
-                options.DisableBackslashEscaping();
                 options.EnableRetryOnFailure();
             });
         });
